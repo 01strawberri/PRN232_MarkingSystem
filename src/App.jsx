@@ -5,15 +5,20 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
-import ProductsPage from "./pages/ProductsPage";
-import GradesPage from "./pages/GradesPage";
+import ExamsPage from "./pages/ExamsPage"; // Exams
+import ExamRoundsPage from "./pages/ExamRoundsPage";
+import ProgressPage from "./pages/ProgressPage";
+import GradesPage from "./pages/GradesPage"; // Results
+import ExamResultPage from "./pages/ExamResultPage";
 import UsersPage from "./pages/UsersPage";
 import SignUpPage from "./pages/SignUpPage";
 import ReportsPage from "./pages/ReportsPage";
 import StudentsPage from "./pages/StudentsPage";
 import SettingsPage from "./pages/SettingsPage";
+
 import Layout from "@/components/Layout";
 
 export default function App() {
@@ -22,8 +27,12 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<Navigate to="/login" />} />
+
+          {/* Authentication */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+
+          {/* Dashboard */}
           <Route
             path="/dashboard"
             element={
@@ -32,30 +41,58 @@ export default function App() {
               </Layout>
             }
           />
+
+          {/* Exams */}
           <Route
             path="/exams"
             element={
               <Layout>
-                <ProductsPage />
+                <ExamsPage />
               </Layout>
             }
           />
+
+          {/* Exam Rounds */}
           <Route
-            path="/grades"
+            path="/exam-rounds"
+            element={
+              <Layout>
+                <ExamRoundsPage />
+              </Layout>
+            }
+          />
+
+          {/* Progress */}
+          <Route
+            path="/progress"
+            element={
+              <Layout>
+                <ProgressPage />
+              </Layout>
+            }
+          />
+
+          {/* Results list */}
+          <Route
+            path="/results"
             element={
               <Layout>
                 <GradesPage />
               </Layout>
             }
           />
+
+          {/* Result detail */}
           <Route
-            path="/users"
+            path="/results/:id"
             element={
               <Layout>
-                <UsersPage />
+                <ExamResultPage />
               </Layout>
             }
           />
+
+          {/* Students */}
           <Route
             path="/students"
             element={
@@ -64,6 +101,18 @@ export default function App() {
               </Layout>
             }
           />
+
+          {/* Users */}
+          <Route
+            path="/users"
+            element={
+              <Layout>
+                <UsersPage />
+              </Layout>
+            }
+          />
+
+          {/* Reports */}
           <Route
             path="/reports"
             element={
@@ -72,6 +121,8 @@ export default function App() {
               </Layout>
             }
           />
+
+          {/* Settings */}
           <Route
             path="/settings"
             element={

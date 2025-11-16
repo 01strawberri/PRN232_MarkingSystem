@@ -50,61 +50,27 @@ export default function Sidebar() {
     <>
       {/* Mobile toggle button */}
       <button
-        id="toggleSidebarMobile"
         onClick={toggleSidebarMobile}
         className="fixed top-4 left-4 z-50 lg:hidden text-gray-800 bg-white p-2 rounded shadow"
-        aria-label="Toggle sidebar"
       >
-        {isOpen ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        )}
+        {isOpen ? "✖" : "☰"}
       </button>
 
-      {/* Mobile backdrop */}
       {isOpen && (
         <div
-          id="sidebarBackdrop"
           onClick={toggleSidebarMobile}
           className="fixed inset-0 bg-black bg-opacity-40 z-40 lg:hidden"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar chính */}
       <aside
-        id="sidebar"
         className={`fixed top-0 left-0 h-full bg-white shadow-xl z-50 transition-transform duration-300 w-64 lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-4 h-full flex flex-col">
+          {/* Logo */}
           <div className="mb-6 flex items-center gap-3">
             <div className="h-10 w-10 bg-indigo-600 rounded-md" />
             <div>
@@ -113,8 +79,10 @@ export default function Sidebar() {
             </div>
           </div>
 
+          {/* Navigation Items */}
           <nav className="flex-1 overflow-y-auto">
             <ul className="space-y-1">
+              {/* Dashboard */}
               <li>
                 <NavLink
                   to="/dashboard"
@@ -122,28 +90,15 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-indigo-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"
-                    />
-                  </svg>
-                  <span>Dashboard</span>
+                  📊 <span>Dashboard</span>
                 </NavLink>
               </li>
 
+              {/* Students */}
               <li>
                 <NavLink
                   to="/students"
@@ -151,28 +106,15 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-indigo-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m4 0h-1a3 3 0 00-3 3v1H8v-1a3 3 0 00-3-3H4"
-                    />
-                  </svg>
-                  <span>Học sinh</span>
+                  🎓 <span>Học sinh</span>
                 </NavLink>
               </li>
 
+              {/* Exams */}
               <li>
                 <NavLink
                   to="/exams"
@@ -180,63 +122,63 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-sky-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5h6M9 3h6a2 2 0 012 2v14a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"
-                    />
-                  </svg>
-                  <span>Kỳ thi</span>
+                  📝 <span>Kỳ thi</span>
                 </NavLink>
               </li>
 
+              {/* Exam Rounds */}
               <li>
                 <NavLink
-                  to="/grades"
+                  to="/exam-rounds"
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-amber-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2v2a3 3 0 006 0v-2c0-1.105-1.343-2-3-2z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 20v-2"
-                    />
-                  </svg>
-                  <span>Điểm</span>
+                  🔄 <span>Exam Rounds</span>
                 </NavLink>
               </li>
 
+              {/* Progress */}
+              <li>
+                <NavLink
+                  to="/progress"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded ${
+                      isActive
+                        ? "bg-gray-100 text-indigo-600"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  ⚙️ <span>Tiến độ chấm</span>
+                </NavLink>
+              </li>
+
+              {/* Results */}
+              <li>
+                <NavLink
+                  to="/results"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded ${
+                      isActive
+                        ? "bg-gray-100 text-indigo-600"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  🏁 <span>Kết quả</span>
+                </NavLink>
+              </li>
+
+              {/* Reports */}
               <li>
                 <NavLink
                   to="/reports"
@@ -244,28 +186,31 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-indigo-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 7h18M3 12h18M3 17h18"
-                    />
-                  </svg>
-                  <span>Reports</span>
+                  📄 <span>Reports</span>
                 </NavLink>
               </li>
 
+              {/* Users */}
+              <li>
+                <NavLink
+                  to="/users"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded ${
+                      isActive
+                        ? "bg-gray-100 text-indigo-600"
+                        : "hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  👤 <span>Người dùng</span>
+                </NavLink>
+              </li>
+
+              {/* Settings */}
               <li>
                 <NavLink
                   to="/settings"
@@ -273,75 +218,37 @@ export default function Sidebar() {
                     `flex items-center gap-3 px-3 py-2 rounded ${
                       isActive
                         ? "bg-gray-100 text-indigo-600"
-                        : "text-gray-700 hover:bg-gray-100"
+                        : "hover:bg-gray-100"
                     }`
                   }
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-indigo-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2v2a3 3 0 006 0v-2c0-1.105-1.343-2-3-2z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 20v-2"
-                    />
-                  </svg>
-                  <span>Settings</span>
+                  ⚙️ <span>Settings</span>
                 </NavLink>
               </li>
             </ul>
           </nav>
 
-          {/* Theme toggle + Sign out */}
+          {/* Footer: theme + logout */}
           <div className="mt-4 space-y-3">
+            {/* Theme toggle */}
             <div className="px-3">
               <button
                 onClick={() =>
                   setTheme((t) => (t === "dark" ? "light" : "dark"))
                 }
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border text-sm"
-                aria-label="Toggle theme"
               >
-                {theme === "dark" ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zM4.22 5.47a1 1 0 011.42 0l.71.7a1 1 0 11-1.42 1.42l-.71-.7a1 1 0 010-1.42zM2 11a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm8 7a1 1 0 011-1v-1a1 1 0 10-2 0v1a1 1 0 011 1zm5.07-2.93a1 1 0 010 1.42l-.7.71a1 1 0 11-1.42-1.42l.7-.71a1 1 0 011.42 0zM17 10a1 1 0 100 2h1a1 1 0 100-2h-1zM6.34 16.66a1 1 0 011.42 0l.71.7a1 1 0 11-1.42 1.42l-.71-.7a1 1 0 010-1.42z" />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z" />
-                  </svg>
-                )}
-                <span>{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+                {theme === "dark" ? "🌙 Dark mode" : "☀️ Light mode"}
               </button>
             </div>
 
+            {/* Sign out */}
             <div className="px-3">
               <NavLink
                 to="/login"
                 className="block px-3 py-2 bg-indigo-600 text-white rounded text-center"
               >
-                Sign out
+                Đăng xuất
               </NavLink>
             </div>
           </div>
