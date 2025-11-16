@@ -1,7 +1,54 @@
 import React, { useState } from "react";
+import API_URL from "@/config/api";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // =============================
+  //       HANDLE LOGIN
+  // =============================
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/authentication/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      // Handle fail
+      if (!response.ok) {
+        const err = await response.json();
+        setError(err.message || "Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // Save token
+      localStorage.setItem("access_token", data.token);
+
+      alert("Login successful!");
+      window.location.href = "/dashboard";
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -17,9 +64,9 @@ const LoginPage = () => {
               Welcome back
             </h1>
             <p className="pr-3 text-sm text-gray-400">
-              Lorem ipsum is placeholder text commonly used in the graphic,
-              print, and publishing industries for previewing layouts and visual
-              mockups.
+              Welcome to the Marking System. This platform provides a reliable
+              environment for assessing submissions, managing grades, and
+              ensuring fair evaluation.
             </p>
           </div>
         </div>
@@ -40,13 +87,21 @@ const LoginPage = () => {
               </p>
             </div>
 
-            <div className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-6">
+              {/* Error message */}
+              {error && (
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              )}
+
               {/* Email */}
               <div>
                 <input
                   className="w-full text-sm px-4 py-3 bg-gray-100 focus:bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-500 text-gray-800"
                   type="email"
                   placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                 />
               </div>
 
@@ -56,7 +111,12 @@ const LoginPage = () => {
                   placeholder="Password"
                   type={showPassword ? "text" : "password"}
                   className="text-sm text-gray-800 px-4 py-3 rounded-lg w-full bg-gray-100 focus:bg-gray-50 border border-gray-300 focus:outline-none focus:border-gray-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                 />
+
+                {/* Toggle icons */}
                 <div className="flex items-center absolute inset-y-0 right-0 mr-3 text-sm leading-5">
                   {/* Lock closed */}
                   <svg
@@ -65,7 +125,6 @@ const LoginPage = () => {
                       showPassword ? "hidden" : "block"
                     }`}
                     fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                   >
                     <path d="M12 2a5 5 0 00-5 5v3H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V12a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 8V7a3 3 0 016 0v3H9z" />
@@ -78,7 +137,6 @@ const LoginPage = () => {
                       showPassword ? "block" : "hidden"
                     }`}
                     fill="currentColor"
-                    xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
                   >
                     <path d="M18 8h-1V6a5 5 0 00-9.9-1.001A1 1 0 008.1 6a3 3 0 016 0v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V10a2 2 0 00-2-2zM12 17a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
@@ -102,9 +160,10 @@ const LoginPage = () => {
               <div>
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full flex justify-center bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg tracking-wide font-semibold cursor-pointer transition ease-in duration-500"
                 >
-                  Sign in
+                  {loading ? "Signing in..." : "Sign in"}
                 </button>
               </div>
 
@@ -171,20 +230,18 @@ const LoginPage = () => {
                   <span>Facebook</span>
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
 
-      {/* Bottom wave (gray tone) */}
+      {/* Bottom wave */}
       <svg
         className="absolute bottom-[-40px] left-0 z-0"
-        xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 1440 320"
       >
         <path
           fill="#f8f9fa"
-          fillOpacity="1"
           d="M0,0L40,42.7C80,85,160,171,240,197.3C320,224,400,192,480,154.7C560,117,640,75,720,74.7C800,75,880,117,960,154.7C1040,192,1120,224,1200,213.3C1280,203,1360,149,1400,122.7L1440,96L1440,320L0,320Z"
         />
       </svg>
