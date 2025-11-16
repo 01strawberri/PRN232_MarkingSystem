@@ -1,0 +1,92 @@
+:root {
+  /* Light theme variables */
+  --bg: #f3f4f6; /* gray-100 */
+  --card-bg: #ffffff; /* white */
+  --text: #0f1724; /* near black */
+  --muted: #6b7280; /* gray-500 */
+  --accent: #111827; /* dark accent */
+  --border-color: rgba(15, 23, 36, 0.08);
+  --row-hover: rgba(15, 23, 36, 0.04);
+}
+
+.theme-dark {
+  /* Dark theme variables */
+  --bg: #070709; /* almost black */
+  --card-bg: #0f1720; /* dark card */
+  --text: #e6eef7; /* light text */
+  --muted: #9ca3af; /* muted light */
+  --accent: #94a3b8; /* light gray accent */
+  --border-color: rgba(255, 255, 255, 0.06);
+  --row-hover: rgba(255, 255, 255, 0.03);
+}
+
+/* Apply page background and base text */
+.app {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Override common Tailwind utility colors inside the app to follow theme variables */
+.app .bg-white {
+  background-color: var(--card-bg) !important;
+}
+.app .text-gray-900 {
+  color: var(--text) !important;
+}
+.app .text-gray-800 {
+  color: var(--text) !important;
+}
+.app .text-gray-700 {
+  color: var(--text) !important;
+}
+.app .text-gray-600 {
+  color: var(--muted) !important;
+}
+.app .text-gray-500 {
+  color: var(--muted) !important;
+}
+.app .text-gray-400 {
+  color: var(--muted) !important;
+}
+.app .bg-indigo-600 {
+  background-color: var(--accent) !important;
+}
+.app .text-indigo-600 {
+  color: var(--accent) !important;
+}
+.app .bg-emerald-500 {
+  background-color: var(--accent) !important;
+}
+.app .bg-yellow-500 {
+  background-color: var(--accent) !important;
+}
+.app .bg-gradient-to-tr {
+  background: var(--accent) !important;
+}
+
+/* Buttons and links */
+.app .btn-accent {
+  background-color: var(--accent);
+  color: white;
+}
+.app .btn-accent:hover {
+  opacity: 0.95;
+}
+
+/* Table overrides */
+.app table {
+  color: var(--text);
+}
+.app .border {
+  border-color: var(--border-color) !important;
+}
+
+/* subtle hover for table rows / list items */
+.app .row-hover:hover {
+  background-color: var(--row-hover) !important;
+}
+
+/* Ensure modals/overlays pick from theme */
+.app .bg-opacity-40 {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}

@@ -42,7 +42,7 @@ export default function Table({
               setQuery(e.target.value);
               setPage(1);
             }}
-            className="px-3 py-2 border rounded w-64 text-sm"
+            className="px-3 py-2 border rounded w-64 text-sm bg-white text-gray-900"
             placeholder="Tìm kiếm..."
           />
         </div>
@@ -55,7 +55,7 @@ export default function Table({
               setPageSize(Number(e.target.value));
               setPage(1);
             }}
-            className="px-2 py-1 border rounded text-sm"
+            className="px-2 py-1 border rounded text-sm bg-white text-gray-900"
           >
             {[5, 10, 20, 50].map((n) => (
               <option key={n} value={n}>
@@ -87,7 +87,7 @@ export default function Table({
               {pageData.map((row, idx) => (
                 <tr
                   key={row.id || idx}
-                  className="border-t last:border-b hover:bg-gray-50"
+                  className="border-t last:border-b row-hover"
                 >
                   {columns.map((col) => (
                     <td

@@ -2,7 +2,7 @@ import React from "react";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+    <div className="min-h-screen p-6 flex items-center justify-center">
       <div className="w-full max-w-md">
         <div className="bg-white p-8 rounded-xl shadow-md">
           <h2 className="text-2xl font-semibold mb-2">Đăng ký</h2>

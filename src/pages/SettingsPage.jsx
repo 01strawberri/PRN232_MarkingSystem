@@ -2,7 +2,7 @@ import React from "react";
 
 export default function SettingsPage() {
   return (
-    <div className="min-h-screen bg-slate-50 p-6 lg:ml-64">
+    <div className="min-h-screen p-6 lg:ml-64">
       <div className="max-w-7xl mx-auto">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold text-gray-900">Cài đặt</h1>

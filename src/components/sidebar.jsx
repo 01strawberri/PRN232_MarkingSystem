@@ -3,6 +3,25 @@ import { NavLink } from "react-router-dom";
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    try {
+      if (
+        typeof window === "undefined" ||
+        typeof localStorage === "undefined"
+      ) {
+        return "light";
+      }
+      return (
+        localStorage.getItem("theme") ||
+        (window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light")
+      );
+    } catch (e) {
+      return "light";
+    }
+  });
 
   useEffect(() => {
     const handleResize = () => {
@@ -13,6 +32,19 @@ export default function Sidebar() {
   }, []);
 
   const toggleSidebarMobile = () => setIsOpen((s) => !s);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("theme-dark");
+    } else {
+      root.classList.remove("theme-dark");
+    }
+    try {
+      localStorage.setItem("theme", theme);
+    } catch (e) {}
+  }, [theme]);
 
   return (
     <>
@@ -271,13 +303,47 @@ export default function Sidebar() {
             </ul>
           </nav>
 
-          <div className="mt-4">
-            <NavLink
-              to="/login"
-              className="block px-3 py-2 bg-indigo-600 text-white rounded text-center"
-            >
-              Sign out
-            </NavLink>
+          {/* Theme toggle + Sign out */}
+          <div className="mt-4 space-y-3">
+            <div className="px-3">
+              <button
+                onClick={() =>
+                  setTheme((t) => (t === "dark" ? "light" : "dark"))
+                }
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border text-sm"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zM4.22 5.47a1 1 0 011.42 0l.71.7a1 1 0 11-1.42 1.42l-.71-.7a1 1 0 010-1.42zM2 11a1 1 0 011-1h1a1 1 0 110 2H3a1 1 0 01-1-1zm8 7a1 1 0 011-1v-1a1 1 0 10-2 0v1a1 1 0 011 1zm5.07-2.93a1 1 0 010 1.42l-.7.71a1 1 0 11-1.42-1.42l.7-.71a1 1 0 011.42 0zM17 10a1 1 0 100 2h1a1 1 0 100-2h-1zM6.34 16.66a1 1 0 011.42 0l.71.7a1 1 0 11-1.42 1.42l-.71-.7a1 1 0 010-1.42z" />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M17.293 13.293A8 8 0 116.707 2.707a7 7 0 1010.586 10.586z" />
+                  </svg>
+                )}
+                <span>{theme === "dark" ? "Dark mode" : "Light mode"}</span>
+              </button>
+            </div>
+
+            <div className="px-3">
+              <NavLink
+                to="/login"
+                className="block px-3 py-2 bg-indigo-600 text-white rounded text-center"
+              >
+                Sign out
+              </NavLink>
+            </div>
           </div>
         </div>
       </aside>
