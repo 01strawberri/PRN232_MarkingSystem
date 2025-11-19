@@ -13,15 +13,42 @@ import Table from "@/components/ui/Table";
 import API_URL from "@/config/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("vi-VN");
+};
+
+const toInputDateTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => num.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hour = pad(date.getHours());
+  const minute = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+};
+
+const fromInputDateTime = (value) =>
+  value ? new Date(value).toISOString() : null;
+
 export default function ExamsPage() {
   const [exams, setExams] = useState([]);
-  const [semesters, setSemesters] = useState({});
-  const [subjects, setSubjects] = useState({});
+  const [semesters, setSemesters] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [processingId, setProcessingId] = useState(null);
 
   const [viewExam, setViewExam] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editExam, setEditExam] = useState(null);
   const [uploadExam, setUploadExam] = useState(null);
 
   const [searchParams] = useSearchParams();
@@ -30,57 +57,93 @@ export default function ExamsPage() {
   const loadedRef = useRef(false);
   const navigate = useNavigate();
 
+  const fetchReferenceData = async () => {
+    const [semRes, subRes] = await Promise.all([
+      fetch(`${API_URL}/api/Semester`),
+      fetch(`${API_URL}/api/Subject`),
+    ]);
+
+    if (!semRes.ok || !subRes.ok) {
+      throw new Error("REFERENCE_FAILED");
+    }
+
+    const semData = await semRes.json();
+    const subData = await subRes.json();
+
+    setSemesters(
+      semData.map((s) => ({
+        id: s.semesterid,
+        name: s.semestercode,
+      }))
+    );
+
+    setSubjects(
+      subData.map((s) => ({
+        id: s.subjectid,
+        name: s.subjectname,
+      }))
+    );
+  };
+
+  const fetchExams = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}/api/Exam`);
+      if (!res.ok) throw new Error("REQUEST_FAILED");
+      const data = await res.json();
+
+      const semLookup = semesters.reduce((acc, cur) => {
+        acc[cur.id] = cur.name;
+        return acc;
+      }, {});
+
+      const subLookup = subjects.reduce((acc, cur) => {
+        acc[cur.id] = cur.name;
+        return acc;
+      }, {});
+
+      const formatted = data.map((e) => ({
+        id: e.examid,
+        examName: e.examname,
+        semesterId: e.semesterid,
+        subjectId: e.subjectid,
+        examDateRaw: e.examdate,
+        examDate: formatDate(e.examdate),
+        createdAt: formatDate(e.createat || e.createdat),
+        semesterName: semLookup[e.semesterid] || e.semesterid,
+        subjectName: subLookup[e.subjectid] || e.subjectid,
+      }));
+
+      setExams(formatted);
+      setActionError("");
+    } catch (err) {
+      console.error(err);
+      setError("Không thể tải dữ liệu kỳ thi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
 
     const load = async () => {
       try {
-        setLoading(true);
-        const [semRes, subRes, examRes] = await Promise.all([
-          fetch(`${API_URL}/odata/semesters`),
-          fetch(`${API_URL}/odata/subjects`),
-          fetch(`${API_URL}/odata/exams`),
-        ]);
-
-        const semData = await semRes.json();
-        const subData = await subRes.json();
-        const examData = await examRes.json();
-
-        const semMap = {};
-        semData.value.forEach((s) => {
-          semMap[s.Semesterid] = s.Semestercode;
-        });
-
-        const subMap = {};
-        subData.value.forEach((s) => {
-          subMap[s.Subjectid] = s.Subjectname;
-        });
-
-        setSemesters(semMap);
-        setSubjects(subMap);
-
-        const formatted = examData.value.map((e) => ({
-          id: e.Examid,
-          examName: e.Examname,
-          semesterId: e.Semesterid,
-          subjectId: e.Subjectid,
-          semesterCode: semMap[e.Semesterid] || "—",
-          subjectName: subMap[e.Subjectid] || "—",
-          examDate: new Date(e.Examdate).toLocaleDateString("vi-VN"),
-          createdAt: new Date(e.Createdat).toLocaleDateString("vi-VN"),
-        }));
-
-        setExams(formatted);
+        await fetchReferenceData();
       } catch (err) {
-        setError("Không thể tải dữ liệu kỳ thi.");
-      } finally {
-        setLoading(false);
+        console.error(err);
+        setError("Không thể tải danh sách học kỳ/môn học.");
       }
     };
 
     load();
-  }, [filterSemesterId]);
+  }, []);
+
+  useEffect(() => {
+    if (!semesters.length || !subjects.length) return;
+    fetchExams();
+  }, [semesters, subjects]);
 
   const filtered = filterSemesterId
     ? exams.filter((e) => String(e.semesterId) === String(filterSemesterId))
@@ -88,7 +151,7 @@ export default function ExamsPage() {
 
   const columns = [
     { key: "examName", label: "Mã kỳ thi" },
-    { key: "semesterCode", label: "Học kỳ" },
+    { key: "semesterName", label: "Học kỳ" },
     { key: "subjectName", label: "Môn học" },
     { key: "examDate", label: "Ngày thi" },
     { key: "createdAt", label: "Ngày tạo" },
@@ -111,6 +174,14 @@ export default function ExamsPage() {
             onClick={() => setUploadExam(row)}
           >
             Chấm bài
+          </Button>
+
+          <Button
+            variant="link"
+            className="p-0 text-amber-600"
+            onClick={() => setEditExam(row)}
+          >
+            Chỉnh sửa
           </Button>
         </div>
       ),
@@ -136,7 +207,7 @@ export default function ExamsPage() {
 
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="secondary">
+              <Button size="sm" variant="secondary" onClick={() => setCreateOpen(true)}>
                 + Tạo kỳ thi mới
               </Button>
             </DialogTrigger>
@@ -144,7 +215,17 @@ export default function ExamsPage() {
               <DialogHeader>
                 <DialogTitle>Tạo kỳ thi mới</DialogTitle>
               </DialogHeader>
-              <CreateExamForm />
+              <CreateExamForm
+                semesters={semesters}
+                subjects={subjects}
+                onSuccess={(msg) => {
+                  setActionMessage(msg);
+                  setTimeout(() => setActionMessage(""), 3000);
+                  setCreateOpen(false);
+                  fetchExams();
+                }}
+                onError={(msg) => setActionError(msg)}
+              />
             </DialogContent>
           </Dialog>
         </header>
@@ -158,6 +239,14 @@ export default function ExamsPage() {
           <CardContent>
             {loading && <p className="text-gray-600">Đang tải...</p>}
             {error && <p className="text-red-600">{error}</p>}
+            {(actionError || actionMessage) && (
+              <div className="mb-3 text-sm">
+                {actionError && <p className="text-red-600">{actionError}</p>}
+                {actionMessage && (
+                  <p className="text-emerald-600">{actionMessage}</p>
+                )}
+              </div>
+            )}
 
             {!loading && (
               <Table columns={columns} data={filtered} initialPageSize={10} />
@@ -167,12 +256,37 @@ export default function ExamsPage() {
       </div>
 
       {viewExam && (
-        <Dialog open={viewExam} onOpenChange={() => setViewExam(null)}>
+        <Dialog open={!!viewExam} onOpenChange={() => setViewExam(null)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Chi tiết kỳ thi</DialogTitle>
             </DialogHeader>
             <ExamDetail exam={viewExam} />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {editExam && (
+        <Dialog open={!!editExam} onOpenChange={() => setEditExam(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Chỉnh sửa kỳ thi</DialogTitle>
+            </DialogHeader>
+            <EditExamForm
+              exam={editExam}
+              semesters={semesters}
+              subjects={subjects}
+              processing={processingId === editExam.id}
+              onStart={() => setProcessingId(editExam.id)}
+              onFinish={() => setProcessingId(null)}
+              onSuccess={(msg) => {
+                setActionMessage(msg);
+                setTimeout(() => setActionMessage(""), 3000);
+                setEditExam(null);
+                fetchExams();
+              }}
+              onError={(msg) => setActionError(msg)}
+            />
           </DialogContent>
         </Dialog>
       )}
@@ -198,7 +312,7 @@ function ExamDetail({ exam }) {
         <b>Mã kỳ thi:</b> {exam.examName}
       </p>
       <p>
-        <b>Học kỳ:</b> {exam.semesterCode}
+        <b>Học kỳ:</b> {exam.semesterName}
       </p>
       <p>
         <b>Môn học:</b> {exam.subjectName}
@@ -266,17 +380,230 @@ function UploadExamForm({ exam }) {
   );
 }
 
-function CreateExamForm() {
-  const [name, setName] = useState("");
+function EditExamForm({
+  exam,
+  semesters,
+  subjects,
+  processing,
+  onStart,
+  onFinish,
+  onSuccess,
+  onError,
+}) {
+  const [name, setName] = useState(exam.examName);
+  const [semesterId, setSemesterId] = useState(exam.semesterId);
+  const [subjectId, setSubjectId] = useState(exam.subjectId);
+  const [examDate, setExamDate] = useState(toInputDateTime(exam.examDateRaw));
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setName(exam.examName);
+    setSemesterId(exam.semesterId);
+    setSubjectId(exam.subjectId);
+    setExamDate(toInputDateTime(exam.examDateRaw));
+  }, [exam]);
+
+  const submit = async () => {
+    if (!name.trim() || !semesterId || !subjectId || !examDate) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+
+    const examDateIso = fromInputDateTime(examDate);
+    if (!examDateIso || new Date(examDateIso) <= new Date()) {
+      setError("Ngày thi phải ở tương lai.");
+      return;
+    }
+
+    onStart?.();
+    setError("");
+    onError?.("");
+
+    try {
+      const payload = {
+        semesterId: Number(semesterId),
+        subjectId: Number(subjectId),
+        examName: name.trim(),
+        examDate: examDateIso,
+      };
+
+      const res = await fetch(`${API_URL}/api/Exam/${exam.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("REQUEST_FAILED");
+
+      onSuccess?.("Đã cập nhật kỳ thi.");
+    } catch (err) {
+      console.error(err);
+      setError("Không thể cập nhật kỳ thi.");
+      onError?.("Không thể cập nhật kỳ thi.");
+    } finally {
+      onFinish?.();
+    }
+  };
+
   return (
     <div className="space-y-4 mt-2">
       <Input
-        placeholder="Mã kỳ thi (VD: PE123_SU25)"
+        placeholder="Tên kỳ thi"
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <Button className="w-full" variant="secondary">
-        Tạo mới
+
+      <select
+        className="w-full border rounded-lg px-3 py-2 text-sm"
+        value={semesterId}
+        onChange={(e) => setSemesterId(e.target.value)}
+      >
+        <option value="">Chọn học kỳ</option>
+        {semesters.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="w-full border rounded-lg px-3 py-2 text-sm"
+        value={subjectId}
+        onChange={(e) => setSubjectId(e.target.value)}
+      >
+        <option value="">Chọn môn học</option>
+        {subjects.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+
+      <Input
+        type="datetime-local"
+        value={examDate}
+        onChange={(e) => setExamDate(e.target.value)}
+        placeholder="Ngày thi"
+      />
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <Button
+        className="w-full"
+        variant="secondary"
+        onClick={submit}
+        disabled={processing}
+      >
+        {processing ? "Đang lưu..." : "Lưu thay đổi"}
+      </Button>
+    </div>
+  );
+}
+
+function CreateExamForm({ semesters, subjects, onSuccess, onError }) {
+  const [name, setName] = useState("");
+  const [semesterId, setSemesterId] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [examDate, setExamDate] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!name.trim() || !semesterId || !subjectId || !examDate) {
+      setError("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+
+    const examDateIso = fromInputDateTime(examDate);
+    if (!examDateIso || new Date(examDateIso) <= new Date()) {
+      setError("Ngày thi phải ở tương lai.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    onError?.("");
+
+    try {
+      const payload = {
+        semesterId: Number(semesterId),
+        subjectId: Number(subjectId),
+        examName: name.trim(),
+        examDate: examDateIso,
+      };
+
+      const res = await fetch(`${API_URL}/api/Exam`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("REQUEST_FAILED");
+
+      setName("");
+      setSemesterId("");
+      setSubjectId("");
+      setExamDate("");
+      onSuccess?.("Đã tạo kỳ thi mới.");
+    } catch (err) {
+      console.error(err);
+      setError("Không thể tạo kỳ thi.");
+      onError?.("Không thể tạo kỳ thi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4 mt-2">
+      <Input
+        placeholder="Tên kỳ thi (VD: PE123_SU25)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+
+      <select
+        className="w-full border rounded-lg px-3 py-2 text-sm"
+        value={semesterId}
+        onChange={(e) => setSemesterId(e.target.value)}
+      >
+        <option value="">Chọn học kỳ</option>
+        {semesters.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        className="w-full border rounded-lg px-3 py-2 text-sm"
+        value={subjectId}
+        onChange={(e) => setSubjectId(e.target.value)}
+      >
+        <option value="">Chọn môn học</option>
+        {subjects.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+
+      <Input
+        type="datetime-local"
+        value={examDate}
+        onChange={(e) => setExamDate(e.target.value)}
+        placeholder="Ngày thi"
+      />
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <Button
+        className="w-full"
+        variant="secondary"
+        onClick={submit}
+        disabled={loading}
+      >
+        {loading ? "Đang tạo..." : "Tạo mới"}
       </Button>
     </div>
   );

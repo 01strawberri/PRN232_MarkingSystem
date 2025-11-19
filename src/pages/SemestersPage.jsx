@@ -13,10 +13,37 @@ import Table from "@/components/ui/Table";
 import API_URL from "@/config/api";
 import { useNavigate } from "react-router-dom";
 
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("vi-VN");
+};
+
+const toInputDateTime = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => num.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hour = pad(date.getHours());
+  const minute = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+};
+
+const fromInputDateTime = (value) =>
+  value ? new Date(value).toISOString() : null;
+
 export default function SemestersPage() {
   const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [processingId, setProcessingId] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const loadedRef = useRef(false);
 
   const [editSemester, setEditSemester] = useState(null);
@@ -24,23 +51,41 @@ export default function SemestersPage() {
 
   const navigate = useNavigate();
 
+  const loadCurrentUser = () => {
+    if (typeof window === "undefined" || typeof localStorage === "undefined")
+      return;
+    const storedId = localStorage.getItem("userId");
+    setCurrentUserId(storedId ? Number(storedId) : null);
+  };
+
   const fetchSemesters = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/odata/semesters`);
+      const res = await fetch(`${API_URL}/api/Semester`);
+      if (!res.ok) {
+        throw new Error("REQUEST_FAILED");
+      }
       const data = await res.json();
 
-      const formatted = data.value.map((s) => ({
-        id: s.Semesterid,
-        code: s.Semestercode,
-        start: new Date(s.Startdate).toLocaleDateString("vi-VN"),
-        end: new Date(s.Enddate).toLocaleDateString("vi-VN"),
-        active: s.Isactive,
-        createdAt: new Date(s.Createat).toLocaleDateString("vi-VN"),
+      const formatted = data.map((s) => ({
+        id: s.semesterid,
+        code: s.semestercode,
+        startDisplay: formatDate(s.startdate),
+        endDisplay: formatDate(s.enddate),
+        startRaw: s.startdate,
+        endRaw: s.enddate,
+        active: Boolean(s.isactive),
+        createdAtDisplay: formatDate(s.createat),
+        createAtRaw: s.createat,
+        updateAtRaw: s.updateat,
+        createBy: s.createby,
+        updateBy: s.updateby,
       }));
 
       setSemesters(formatted);
+      setActionError("");
     } catch (err) {
+      console.error(err);
       setError("Không thể tải danh sách học kỳ.");
     } finally {
       setLoading(false);
@@ -50,13 +95,22 @@ export default function SemestersPage() {
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
+    loadCurrentUser();
     fetchSemesters();
   }, []);
 
   const columns = [
     { key: "code", label: "Mã học kỳ" },
-    { key: "start", label: "Ngày bắt đầu" },
-    { key: "end", label: "Ngày kết thúc" },
+    {
+      key: "startDisplay",
+      label: "Ngày bắt đầu",
+      render: (r) => r.startDisplay,
+    },
+    {
+      key: "endDisplay",
+      label: "Ngày kết thúc",
+      render: (r) => r.endDisplay,
+    },
     {
       key: "active",
       label: "Trạng thái",
@@ -67,7 +121,11 @@ export default function SemestersPage() {
           <span className="text-gray-500">Không hoạt động</span>
         ),
     },
-    { key: "createdAt", label: "Ngày tạo" },
+    {
+      key: "createdAtDisplay",
+      label: "Ngày tạo",
+      render: (r) => r.createdAtDisplay,
+    },
     {
       key: "actions",
       label: "Hành động",
@@ -103,7 +161,11 @@ export default function SemestersPage() {
         <div className="flex justify-end">
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="secondary">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setCreateOpen(true)}
+              >
                 + Tạo học kỳ mới
               </Button>
             </DialogTrigger>
@@ -111,7 +173,17 @@ export default function SemestersPage() {
               <DialogHeader>
                 <DialogTitle>Tạo học kỳ mới</DialogTitle>
               </DialogHeader>
-              <SemesterCreateForm />
+              <SemesterCreateForm
+                currentUserId={currentUserId}
+                onClose={() => setCreateOpen(false)}
+                onSuccess={(msg) => {
+                  setActionMessage(msg);
+                  setTimeout(() => setActionMessage(""), 3000);
+                  setCreateOpen(false);
+                  fetchSemesters();
+                }}
+                onError={(msg) => setActionError(msg)}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -125,6 +197,14 @@ export default function SemestersPage() {
           <CardContent>
             {loading && <div className="text-gray-600">Đang tải...</div>}
             {error && <div className="text-red-600">{error}</div>}
+            {(actionError || actionMessage) && (
+              <div className="mb-3 text-sm">
+                {actionError && <p className="text-red-600">{actionError}</p>}
+                {actionMessage && (
+                  <p className="text-emerald-600">{actionMessage}</p>
+                )}
+              </div>
+            )}
 
             {!loading && (
               <Table
@@ -140,12 +220,30 @@ export default function SemestersPage() {
       </div>
 
       {editSemester && (
-        <Dialog open={editSemester} onOpenChange={() => setEditSemester(null)}>
+        <Dialog
+          open={!!editSemester}
+          onOpenChange={(open) => {
+            if (!open) setEditSemester(null);
+          }}
+        >
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Chỉnh sửa học kỳ</DialogTitle>
             </DialogHeader>
-            <SemesterEditForm semester={editSemester} />
+            <SemesterEditForm
+              semester={editSemester}
+              currentUserId={currentUserId}
+              processing={processingId === editSemester.id}
+              onStart={() => setProcessingId(editSemester.id)}
+              onFinish={() => setProcessingId(null)}
+              onSuccess={(msg) => {
+                setActionMessage(msg);
+                setTimeout(() => setActionMessage(""), 3000);
+                setEditSemester(null);
+                fetchSemesters();
+              }}
+              onError={(msg) => setActionError(msg)}
+            />
           </DialogContent>
         </Dialog>
       )}
@@ -153,10 +251,71 @@ export default function SemestersPage() {
   );
 }
 
-function SemesterEditForm({ semester }) {
+function SemesterEditForm({
+  semester,
+  currentUserId,
+  processing,
+  onStart,
+  onFinish,
+  onSuccess,
+  onError,
+}) {
   const [code, setCode] = useState(semester.code);
-  const [start, setStart] = useState(semester.start);
-  const [end, setEnd] = useState(semester.end);
+  const [start, setStart] = useState(toInputDateTime(semester.startRaw));
+  const [end, setEnd] = useState(toInputDateTime(semester.endRaw));
+  const [isActive, setIsActive] = useState(semester.active);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setCode(semester.code);
+    setStart(toInputDateTime(semester.startRaw));
+    setEnd(toInputDateTime(semester.endRaw));
+    setIsActive(semester.active);
+  }, [semester]);
+
+  const submit = async () => {
+    if (!code.trim()) {
+      setError("Vui lòng nhập mã học kỳ.");
+      return;
+    }
+    if (!start || !end) {
+      setError("Vui lòng chọn thời gian bắt đầu và kết thúc.");
+      return;
+    }
+
+    onStart?.();
+    setError("");
+    onError?.("");
+
+    try {
+      const payload = {
+        semesterCode: code.trim(),
+        startDate: fromInputDateTime(start),
+        endDate: fromInputDateTime(end),
+        isActive,
+        createAt: semester.createAtRaw || new Date().toISOString(),
+        updateAt: new Date().toISOString(),
+        createBy: semester.createBy ?? currentUserId ?? 0,
+        updateBy: currentUserId ?? 0,
+      };
+
+      const res = await fetch(`${API_URL}/api/Semester/${semester.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("REQUEST_FAILED");
+
+      onSuccess?.("Đã cập nhật học kỳ.");
+    } catch (err) {
+      console.error(err);
+      setError("Không thể cập nhật học kỳ.");
+      onError?.("Không thể cập nhật học kỳ.");
+    } finally {
+      onFinish?.();
+    }
+  };
 
   return (
     <div className="space-y-4 mt-2">
@@ -166,25 +325,96 @@ function SemesterEditForm({ semester }) {
         onChange={(e) => setCode(e.target.value)}
       />
       <Input
+        type="datetime-local"
         placeholder="Ngày bắt đầu"
         value={start}
         onChange={(e) => setStart(e.target.value)}
       />
       <Input
+        type="datetime-local"
         placeholder="Ngày kết thúc"
         value={end}
         onChange={(e) => setEnd(e.target.value)}
       />
 
-      <Button className="w-full" variant="secondary">
-        Lưu thay đổi
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={isActive}
+          onChange={(e) => setIsActive(e.target.checked)}
+        />
+        Học kỳ đang hoạt động
+      </label>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <Button
+        className="w-full"
+        variant="secondary"
+        onClick={submit}
+        disabled={processing}
+      >
+        {processing ? "Đang lưu..." : "Lưu thay đổi"}
       </Button>
     </div>
   );
 }
 
-function SemesterCreateForm() {
+function SemesterCreateForm({ currentUserId, onSuccess, onError, onClose }) {
   const [code, setCode] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!code.trim()) {
+      setError("Vui lòng nhập mã học kỳ.");
+      return;
+    }
+    if (!start || !end) {
+      setError("Vui lòng chọn thời gian bắt đầu và kết thúc.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    onError?.("");
+
+    try {
+      const now = new Date().toISOString();
+      const payload = {
+        semesterCode: code.trim(),
+        startDate: fromInputDateTime(start),
+        endDate: fromInputDateTime(end),
+        isActive: true,
+        createAt: now,
+        updateAt: null,
+        createBy: currentUserId ?? 0,
+        updateBy: null,
+      };
+
+      const res = await fetch(`${API_URL}/api/Semester`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("REQUEST_FAILED");
+
+      setCode("");
+      setStart("");
+      setEnd("");
+      onClose?.();
+      onSuccess?.("Đã tạo học kỳ mới.");
+    } catch (err) {
+      console.error(err);
+      setError("Không thể tạo học kỳ.");
+      onError?.("Không thể tạo học kỳ.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4 mt-2">
@@ -193,7 +423,29 @@ function SemesterCreateForm() {
         value={code}
         onChange={(e) => setCode(e.target.value)}
       />
-      <Button className="w-full">Tạo mới</Button>
+      <Input
+        type="datetime-local"
+        placeholder="Ngày bắt đầu"
+        value={start}
+        onChange={(e) => setStart(e.target.value)}
+      />
+      <Input
+        type="datetime-local"
+        placeholder="Ngày kết thúc"
+        value={end}
+        onChange={(e) => setEnd(e.target.value)}
+      />
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <Button
+        className="w-full"
+        variant="secondary"
+        onClick={submit}
+        disabled={loading}
+      >
+        {loading ? "Đang tạo..." : "Tạo mới"}
+      </Button>
     </div>
   );
 }

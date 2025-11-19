@@ -101,6 +101,16 @@ export default function App() {
             }
           />
 
+          {/* Groups */}
+          <Route
+            path="/groups"
+            element={
+              <Layout>
+                <GroupsPage />
+              </Layout>
+            }
+          />
+
           {/* Users */}
           <Route
             path="/users"

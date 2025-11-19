@@ -10,6 +10,9 @@ export default function UsersPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [processingId, setProcessingId] = useState(null);
   const loadedRef = useRef(false);
 
   const [viewUser, setViewUser] = useState(null);
@@ -28,7 +31,7 @@ export default function UsersPage() {
 
       const formatted = data.value.map((u) => ({
         id: u.Userid,
-        name: u.Username,
+        username: u.Username,
         email: u.Email,
         role: u.Role,
         active: u.Isactive,
@@ -50,6 +53,50 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  const handleToggleActive = async (user) => {
+    const nextActive = !user.active;
+    const confirmLabel = nextActive ? "mở khoá" : "khoá";
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(`Bạn có chắc muốn ${confirmLabel} tài khoản này?`)
+    ) {
+      return;
+    }
+
+    setProcessingId(user.id);
+    setActionError("");
+
+    try {
+      const payload = {
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        isactive: nextActive,
+      };
+
+      const res = await fetch(`${API_URL}/api/user/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("REQUEST_FAILED");
+      }
+
+      await fetchUsers();
+      setActionMessage(`Đã ${nextActive ? "mở khoá" : "khoá"} ${user.username}.`);
+      setTimeout(() => setActionMessage(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setActionError("Không thể cập nhật trạng thái tài khoản.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   /* ============================================================
       SEARCH + FILTER ROLE
   =============================================================== */
@@ -60,7 +107,8 @@ export default function UsersPage() {
       const s = search.toLowerCase();
       list = list.filter(
         (u) =>
-          u.name.toLowerCase().includes(s) || u.email.toLowerCase().includes(s)
+          u.username.toLowerCase().includes(s) ||
+          u.email.toLowerCase().includes(s)
       );
     }
 
@@ -132,7 +180,7 @@ export default function UsersPage() {
                 <tbody>
                   {filtered.map((u) => (
                     <tr key={u.id} className="border-b last:border-0">
-                      <td className="py-2 pr-4 text-gray-800">{u.name}</td>
+                      <td className="py-2 pr-4 text-gray-800">{u.username}</td>
                       <td className="py-2 pr-4 text-gray-800">{u.email}</td>
                       <td className="py-2 pr-4 text-gray-600">{u.role}</td>
                       <td className="py-2 pr-4">
@@ -158,8 +206,20 @@ export default function UsersPage() {
                         >
                           Chỉnh sửa
                         </button>
-                        <button className="text-xs text-red-600 hover:underline">
-                          Khoá
+                        <button
+                          className={`text-xs hover:underline ${
+                            u.active
+                              ? "text-red-600"
+                              : "text-emerald-600"
+                          } ${processingId === u.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                          onClick={() => handleToggleActive(u)}
+                          disabled={processingId === u.id}
+                        >
+                          {processingId === u.id
+                            ? "Đang xử lý..."
+                            : u.active
+                            ? "Khoá"
+                            : "Mở khoá"}
                         </button>
                       </td>
                     </tr>
@@ -167,6 +227,14 @@ export default function UsersPage() {
                 </tbody>
               </table>
             </div>
+            {(actionError || actionMessage) && (
+              <div className="mt-4 text-sm">
+                {actionError && <p className="text-red-600">{actionError}</p>}
+                {actionMessage && (
+                  <p className="text-emerald-600">{actionMessage}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -175,7 +243,7 @@ export default function UsersPage() {
       {viewUser && (
         <Modal title="Thông tin người dùng" onClose={() => setViewUser(null)}>
           <p>
-            <b>Username:</b> {viewUser.name}
+            <b>Username:</b> {viewUser.username}
           </p>
           <p>
             <b>Email:</b> {viewUser.email}
@@ -195,14 +263,25 @@ export default function UsersPage() {
       {/* ================= EDIT MODAL ================= */}
       {editUser && (
         <Modal title="Chỉnh sửa người dùng" onClose={() => setEditUser(null)}>
-          <EditUserForm user={editUser} />
+          <EditUserForm
+            user={editUser}
+            onSuccess={() => {
+              fetchUsers();
+              setEditUser(null);
+            }}
+          />
         </Modal>
       )}
 
       {/* ================= CREATE MODAL ================= */}
       {createModal && (
         <Modal title="Tạo người dùng" onClose={() => setCreateModal(false)}>
-          <CreateUserForm />
+          <CreateUserForm
+            onSuccess={() => {
+              fetchUsers();
+              setCreateModal(false);
+            }}
+          />
         </Modal>
       )}
     </div>
@@ -236,14 +315,66 @@ function Modal({ title, children, onClose }) {
 /* ============================================================
    EDIT USER FORM
 =============================================================== */
-function EditUserForm({ user }) {
+function EditUserForm({ user, onSuccess }) {
+  const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [role, setRole] = useState(user.role);
+  const [active, setActive] = useState(user.active);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const save = () => alert("Demo: chưa nối API PATCH");
+  const save = async () => {
+    if (!username.trim() || !email.trim()) {
+      setError("Vui lòng nhập đầy đủ Username và Email.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const payload = {
+        username: username.trim(),
+        email: email.trim(),
+        role,
+        isactive: active,
+      };
+
+      if (password.trim()) {
+        payload.password = password.trim();
+      }
+
+      const res = await fetch(`${API_URL}/api/user/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("REQUEST_FAILED");
+      }
+
+      onSuccess?.();
+    } catch (err) {
+      console.error(err);
+      setError("Không thể cập nhật người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
+      <label className="text-sm">Username:</label>
+      <input
+        className="w-full border px-3 py-2 rounded-lg text-sm"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+      />
+
       <label className="text-sm">Email:</label>
       <input
         className="w-full border px-3 py-2 rounded-lg text-sm"
@@ -261,11 +392,32 @@ function EditUserForm({ user }) {
         <option value="Teacher">Teacher</option>
       </select>
 
+      <label className="text-sm">Mật khẩu mới (tuỳ chọn):</label>
+      <input
+        type="password"
+        className="w-full border px-3 py-2 rounded-lg text-sm"
+        placeholder="Để trống nếu không đổi mật khẩu"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={active}
+          onChange={(e) => setActive(e.target.checked)}
+        />
+        Tài khoản đang kích hoạt
+      </label>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
       <button
         onClick={save}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm disabled:opacity-50"
+        disabled={loading}
       >
-        Lưu
+        {loading ? "Đang lưu..." : "Lưu"}
       </button>
     </div>
   );
@@ -274,11 +426,58 @@ function EditUserForm({ user }) {
 /* ============================================================
    CREATE USER FORM
 =============================================================== */
-function CreateUserForm() {
+function CreateUserForm({ onSuccess }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Teacher");
+  const [active, setActive] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const create = () => alert("Demo: chưa nối API POST");
+  const create = async () => {
+    if (!username.trim() || !email.trim() || !password.trim()) {
+      setError("Vui lòng nhập Username, Email và Mật khẩu.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const payload = {
+        username: username.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        role,
+        isactive: active,
+      };
+
+      const res = await fetch(`${API_URL}/api/user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error("REQUEST_FAILED");
+      }
+
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setRole("Teacher");
+      setActive(true);
+      onSuccess?.();
+    } catch (err) {
+      console.error(err);
+      setError("Không thể tạo người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -298,11 +497,42 @@ function CreateUserForm() {
         onChange={(e) => setEmail(e.target.value)}
       />
 
+      <label className="text-sm">Mật khẩu:</label>
+      <input
+        type="password"
+        className="w-full border px-3 py-2 rounded-lg text-sm"
+        placeholder="Mật khẩu"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <label className="text-sm">Vai trò:</label>
+      <select
+        className="w-full border px-3 py-2 rounded-lg text-sm"
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
+        <option value="Admin">Admin</option>
+        <option value="Teacher">Teacher</option>
+      </select>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={active}
+          onChange={(e) => setActive(e.target.checked)}
+        />
+        Kích hoạt ngay
+      </label>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
       <button
         onClick={create}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
+        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm disabled:opacity-50"
+        disabled={loading}
       >
-        Tạo mới
+        {loading ? "Đang tạo..." : "Tạo mới"}
       </button>
     </div>
   );

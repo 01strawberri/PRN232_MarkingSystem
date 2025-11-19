@@ -95,6 +95,7 @@ export default function Sidebar() {
             <ul className="space-y-1 px-2">
               {renderItem("/dashboard", LayoutDashboard, "Dashboard", expanded)}
               {renderItem("/students", GraduationCap, "Học sinh", expanded)}
+              {renderItem("/groups", Users, "Lớp học", expanded)}
               {renderItem("/semesters", BookOpen, "Học kỳ", expanded)}
               {renderItem("/exams", FileText, "Kỳ thi", expanded)}
               {renderItem("/grades", FileSpreadsheet, "Kết quả", expanded)}

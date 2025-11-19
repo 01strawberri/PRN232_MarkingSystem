@@ -39,9 +39,13 @@ const LoginPage = () => {
       localStorage.setItem("access_token", data.data.accessToken);
 
       // Nếu API trả về các thông tin khác → lưu luôn
-      if (data.email) localStorage.setItem("email", data.email);
-      if (data.role) localStorage.setItem("role", data.role);
-      if (data.userId) localStorage.setItem("userId", data.userId);
+      const payload = data.data || {};
+      if (payload.email) localStorage.setItem("email", payload.email);
+      if (payload.role) localStorage.setItem("role", payload.role);
+      if (payload.userid !== undefined)
+        localStorage.setItem("userId", String(payload.userid));
+      if (payload.username)
+        localStorage.setItem("username", payload.username);
 
       alert("Đăng nhập thành công!");
 
