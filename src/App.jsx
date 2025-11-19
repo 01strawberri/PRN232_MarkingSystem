@@ -11,13 +11,14 @@ import DashboardPage from "./pages/DashboardPage";
 import ExamsPage from "./pages/ExamsPage"; // Exams
 import ExamRoundsPage from "./pages/ExamRoundsPage";
 import ProgressPage from "./pages/ProgressPage";
-import GradesPage from "./pages/GradesPage"; // Results
-import ExamResultPage from "./pages/ExamResultPage";
+import GradesPage from "./pages/GradesPage";
 import UsersPage from "./pages/UsersPage";
 import SignUpPage from "./pages/SignUpPage";
 import ReportsPage from "./pages/ReportsPage";
 import StudentsPage from "./pages/StudentsPage";
 import SettingsPage from "./pages/SettingsPage";
+import GroupsPage from "./pages/GroupsPage";
+import SemestersPage from "./pages/SemestersPage";
 
 import Layout from "@/components/Layout";
 
@@ -41,7 +42,15 @@ export default function App() {
               </Layout>
             }
           />
-
+          {/* Semester */}
+          <Route
+            path="/semesters"
+            element={
+              <Layout>
+                <SemestersPage />
+              </Layout>
+            }
+          />
           {/* Exams */}
           <Route
             path="/exams"
@@ -74,20 +83,10 @@ export default function App() {
 
           {/* Results list */}
           <Route
-            path="/results"
+            path="/grades"
             element={
               <Layout>
                 <GradesPage />
-              </Layout>
-            }
-          />
-
-          {/* Result detail */}
-          <Route
-            path="/results/:id"
-            element={
-              <Layout>
-                <ExamResultPage />
               </Layout>
             }
           />
