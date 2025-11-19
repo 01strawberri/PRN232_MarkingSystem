@@ -50,7 +50,12 @@ export default function ExamsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editExam, setEditExam] = useState(null);
   const [uploadExam, setUploadExam] = useState(null);
+  const [role, setRole] = useState(null);
 
+  useEffect(() => {
+    const storedRole = localStorage.getItem("role");
+    setRole(storedRole);
+  }, []);
   const [searchParams] = useSearchParams();
   const filterSemesterId = searchParams.get("semesterId");
 
@@ -176,13 +181,15 @@ export default function ExamsPage() {
             Chấm bài
           </Button>
 
-          <Button
-            variant="link"
-            className="p-0 text-amber-600"
-            onClick={() => setEditExam(row)}
-          >
-            Chỉnh sửa
-          </Button>
+          {role === "Admin" && (
+            <Button
+              variant="link"
+              className="p-0 text-amber-600"
+              onClick={() => setEditExam(row)}
+            >
+              Chỉnh sửa
+            </Button>
+          )}
         </div>
       ),
     },
@@ -207,25 +214,42 @@ export default function ExamsPage() {
 
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="secondary" onClick={() => setCreateOpen(true)}>
-                + Tạo kỳ thi mới
-              </Button>
+              {role === "Admin" ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setCreateOpen(true)}
+                >
+                  + Tạo kỳ thi mới
+                </Button>
+              ) : (
+                <div className="text-red-500 text-sm">
+                  Bạn không có quyền tạo kỳ thi.
+                </div>
+              )}
             </DialogTrigger>
+
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Tạo kỳ thi mới</DialogTitle>
-              </DialogHeader>
-              <CreateExamForm
-                semesters={semesters}
-                subjects={subjects}
-                onSuccess={(msg) => {
-                  setActionMessage(msg);
-                  setTimeout(() => setActionMessage(""), 3000);
-                  setCreateOpen(false);
-                  fetchExams();
-                }}
-                onError={(msg) => setActionError(msg)}
-              />
+              </DialogHeader>{" "}
+              {role === "Admin" ? (
+                <CreateExamForm
+                  semesters={semesters}
+                  subjects={subjects}
+                  onSuccess={(msg) => {
+                    setActionMessage(msg);
+                    setTimeout(() => setActionMessage(""), 3000);
+                    setCreateOpen(false);
+                    fetchExams();
+                  }}
+                  onError={(msg) => setActionError(msg)}
+                />
+              ) : (
+                <div className="text-red-500 text-sm">
+                  Bạn không có quyền tạo kỳ thi.
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </header>
@@ -272,21 +296,27 @@ export default function ExamsPage() {
             <DialogHeader>
               <DialogTitle>Chỉnh sửa kỳ thi</DialogTitle>
             </DialogHeader>
-            <EditExamForm
-              exam={editExam}
-              semesters={semesters}
-              subjects={subjects}
-              processing={processingId === editExam.id}
-              onStart={() => setProcessingId(editExam.id)}
-              onFinish={() => setProcessingId(null)}
-              onSuccess={(msg) => {
-                setActionMessage(msg);
-                setTimeout(() => setActionMessage(""), 3000);
-                setEditExam(null);
-                fetchExams();
-              }}
-              onError={(msg) => setActionError(msg)}
-            />
+            {role === "Admin" ? (
+              <EditExamForm
+                exam={editExam}
+                semesters={semesters}
+                subjects={subjects}
+                processing={processingId === editExam.id}
+                onStart={() => setProcessingId(editExam.id)}
+                onFinish={() => setProcessingId(null)}
+                onSuccess={(msg) => {
+                  setActionMessage(msg);
+                  setTimeout(() => setActionMessage(""), 3000);
+                  setEditExam(null);
+                  fetchExams();
+                }}
+                onError={(msg) => setActionError(msg)}
+              />
+            ) : (
+              <div className="text-red-500 text-sm">
+                Bạn không có quyền thực hiện chức năng này.
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       )}

@@ -118,21 +118,71 @@ export default function GradesPage() {
   };
 
   /* ======================================================
-     APPROVE / REJECT
-  ====================================================== */
+   APPROVE / REJECT — UPDATE STATUS THEO ROLE
+====================================================== */
+
+  const updateGradeStatus = async (gradeId, newStatus) => {
+    try {
+      // Fetch lại grade để lấy đầy đủ dữ liệu
+      const res = await fetch(
+        `${API_URL}/odata/grades?$filter=Gradeid eq ${gradeId}`
+      );
+      const data = await res.json();
+      const g = data.value[0];
+
+      if (!g) {
+        alert("Không tìm thấy grade!");
+        return;
+      }
+
+      const marker = Number(localStorage.getItem("userId")) || 0;
+
+      const body = {
+        submissionId: g.Submissionid,
+        q1: g.Q1,
+        q2: g.Q2,
+        q3: g.Q3,
+        q4: g.Q4,
+        q5: g.Q5,
+        q6: g.Q6,
+        totalscore: g.Totalscore,
+        status: newStatus,
+        marker: marker,
+      };
+
+      const putRes = await fetch(`${API_URL}/api/Grade/${gradeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (putRes.ok) {
+        alert("Cập nhật trạng thái thành công!");
+        window.location.reload();
+      } else {
+        alert("Cập nhật thất bại!");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi kết nối!");
+    }
+  };
+
   const approveGrade = async (id) => {
-    const res = await fetch(`${API_URL}/api/grades/${id}/approve`, {
-      method: "POST",
-    });
-    res.ok ? alert("Đã duyệt!") : alert("Approve thất bại");
+    const role = localStorage.getItem("role"); // Admin / Teacher / Moderator
+    const newStatus = `${role} Approved`;
+    await updateGradeStatus(id, newStatus);
   };
 
   const rejectGrade = async (id) => {
-    const res = await fetch(`${API_URL}/api/grades/${id}/reject`, {
-      method: "POST",
-    });
-    res.ok ? alert("Đã từ chối!") : alert("Reject thất bại");
+    const role = localStorage.getItem("role");
+    const newStatus = `${role} Rejected`;
+    await updateGradeStatus(id, newStatus);
   };
+
   const fetchGrades = async (
     url = `${API_URL}/odata/grades`,
     userMap,
@@ -253,10 +303,34 @@ export default function GradesPage() {
   }, [grades]);
 
   /* ======================================================
-     FILTER
-  ====================================================== */
-  const filtered = grades.filter((g) => (g.submissionId + "").includes(search));
+   FILTER BY ROLE
+====================================================== */
+  const role = localStorage.getItem("role") || "";
 
+  const roleFiltered = grades.filter((g) => {
+    switch (role) {
+      case "Teacher":
+        // Teacher chỉ thấy Completed, Moderator Rejected, Admin Rejected
+        return ["Completed", "Moderator Rejected", "Admin Rejected"].includes(
+          g.status
+        );
+
+      case "Moderator":
+        // Moderator chỉ thấy Teacher Approved
+        return g.status === "Teacher Approved";
+
+      default:
+        // Admin hoặc user khác thấy tất cả
+        return true;
+    }
+  });
+
+  /* ======================================================
+   SEARCH FILTER
+====================================================== */
+  const filtered = roleFiltered.filter((g) =>
+    (g.submissionId + "").includes(search)
+  );
   /* ======================================================
      TABLE COLUMNS
   ====================================================== */
@@ -265,7 +339,24 @@ export default function GradesPage() {
     { key: "studentName", label: "Họ tên" },
     { key: "examName", label: "Bài thi" },
 
-    { key: "status", label: "Trạng thái" },
+    {
+      key: "status",
+      label: "Trạng thái",
+      render: (row) => {
+        const s = row.status || "";
+
+        let color = "text-gray-600"; // default
+
+        if (s.toLowerCase() === "complete")
+          color = "text-sky-600 font-semibold";
+
+        if (s.includes("Approved")) color = "text-green-600 font-semibold";
+
+        if (s.includes("Rejected")) color = "text-red-600 font-semibold";
+
+        return <span className={color}>{s}</span>;
+      },
+    },
 
     { key: "q1", label: "Q1" },
     { key: "q2", label: "Q2" },

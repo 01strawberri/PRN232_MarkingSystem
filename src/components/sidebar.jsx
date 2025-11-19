@@ -6,10 +6,7 @@ import {
   FileSpreadsheet,
   FileText,
   Settings,
-  Repeat,
-  BarChart3,
   LogOut,
-  UserRound,
   BookOpen,
   GraduationCap,
 } from "lucide-react";
@@ -17,6 +14,9 @@ import {
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const [hoverExpand, setHoverExpand] = useState(false);
+
+  // lấy role từ localStorage
+  const role = localStorage.getItem("role") || "Admin";
 
   const [theme, setTheme] = useState(() => {
     try {
@@ -71,12 +71,10 @@ export default function Sidebar() {
       <aside
         onMouseEnter={() => setHoverExpand(true)}
         onMouseLeave={() => setHoverExpand(false)}
-        className={`
-          fixed top-0 left-0 h-full z-50 bg-[#111] text-white shadow-xl 
+        className={`fixed top-0 left-0 h-full z-50 bg-[#111] text-white shadow-xl 
           transition-all duration-300 overflow-hidden
           ${expanded ? "w-64" : "w-16"}
-          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
+          ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <div className="flex flex-col h-full">
           {/* LOGO */}
@@ -93,15 +91,22 @@ export default function Sidebar() {
           {/* NAVIGATION */}
           <nav className="mt-3 flex-1 overflow-y-auto">
             <ul className="space-y-1 px-2">
+              {/* COMMON FOR ALL ROLES */}
               {renderItem("/dashboard", LayoutDashboard, "Dashboard", expanded)}
-              {renderItem("/students", GraduationCap, "Học sinh", expanded)}
-              {renderItem("/groups", Users, "Lớp học", expanded)}
               {renderItem("/semesters", BookOpen, "Học kỳ", expanded)}
               {renderItem("/exams", FileText, "Kỳ thi", expanded)}
               {renderItem("/grades", FileSpreadsheet, "Kết quả", expanded)}
-              {renderItem("/reports", BookOpen, "Reports", expanded)}
-              {renderItem("/users", Users, "Người dùng", expanded)}
-              {renderItem("/settings", Settings, "Settings", expanded)}
+
+              {/* ONLY ADMIN */}
+              {role === "Admin" && (
+                <>
+                  {renderItem("/students", GraduationCap, "Học sinh", expanded)}
+                  {renderItem("/groups", Users, "Lớp học", expanded)}
+                  {renderItem("/reports", BookOpen, "Reports", expanded)}
+                  {renderItem("/users", Users, "Người dùng", expanded)}
+                  {renderItem("/settings", Settings, "Settings", expanded)}
+                </>
+              )}
             </ul>
           </nav>
 
@@ -131,8 +136,12 @@ export default function Sidebar() {
             <div className="mt-4 flex items-center gap-3">
               {expanded && (
                 <div className="text-sm">
-                  <div className="font-medium">Admin</div>
-                  <div className="text-xs text-gray-400">admin@example.com</div>
+                  <div className="font-medium">
+                    {localStorage.getItem("username")}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {localStorage.getItem("email")}
+                  </div>
                 </div>
               )}
             </div>
@@ -149,10 +158,8 @@ function renderItem(to, Icon, label, expanded) {
       <NavLink
         to={to}
         className={({ isActive }) =>
-          `
-            flex items-center gap-3 px-3 py-2 rounded-md transition
-            ${isActive ? "bg-white/10 text-indigo-400" : "hover:bg-white/10"}
-          `
+          `flex items-center gap-3 px-3 py-2 rounded-md transition
+           ${isActive ? "bg-white/10 text-indigo-400" : "hover:bg-white/10"}`
         }
       >
         <Icon className="w-5 h-5" />

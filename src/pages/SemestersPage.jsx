@@ -50,7 +50,12 @@ export default function SemestersPage() {
   const [createOpen, setCreateOpen] = useState(false);
 
   const navigate = useNavigate();
+  const [role, setRole] = useState("Admin");
 
+  useEffect(() => {
+    const r = localStorage.getItem("role") || "Admin";
+    setRole(r);
+  }, []);
   const loadCurrentUser = () => {
     if (typeof window === "undefined" || typeof localStorage === "undefined")
       return;
@@ -129,18 +134,21 @@ export default function SemestersPage() {
     {
       key: "actions",
       label: "Hành động",
-      render: (row) => (
-        <Button
-          variant="link"
-          className="text-amber-600 p-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditSemester(row);
-          }}
-        >
-          Chỉnh sửa
-        </Button>
-      ),
+      render: (row) =>
+        role === "Admin" ? (
+          <Button
+            variant="link"
+            className="text-amber-600 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditSemester(row);
+            }}
+          >
+            Chỉnh sửa
+          </Button>
+        ) : (
+          <span className="text-gray-400 text-xs">—</span>
+        ),
     },
   ];
 
@@ -173,17 +181,23 @@ export default function SemestersPage() {
               <DialogHeader>
                 <DialogTitle>Tạo học kỳ mới</DialogTitle>
               </DialogHeader>
-              <SemesterCreateForm
-                currentUserId={currentUserId}
-                onClose={() => setCreateOpen(false)}
-                onSuccess={(msg) => {
-                  setActionMessage(msg);
-                  setTimeout(() => setActionMessage(""), 3000);
-                  setCreateOpen(false);
-                  fetchSemesters();
-                }}
-                onError={(msg) => setActionError(msg)}
-              />
+              {role === "Admin" ? (
+                <SemesterCreateForm
+                  currentUserId={currentUserId}
+                  onClose={() => setCreateOpen(false)}
+                  onSuccess={(msg) => {
+                    setActionMessage(msg);
+                    setTimeout(() => setActionMessage(""), 3000);
+                    setCreateOpen(false);
+                    fetchSemesters();
+                  }}
+                  onError={(msg) => setActionError(msg)}
+                />
+              ) : (
+                <div className="text-red-600 text-sm py-2">
+                  Bạn không có quyền thực hiện chức năng này.
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </div>
@@ -219,7 +233,7 @@ export default function SemestersPage() {
         </Card>
       </div>
 
-      {editSemester && (
+      {editSemester && role === "Admin" && (
         <Dialog
           open={!!editSemester}
           onOpenChange={(open) => {
