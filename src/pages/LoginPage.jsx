@@ -56,16 +56,32 @@ const LoginPage = () => {
 
   return (
     <div className="relative min-h-screen">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700 h-full w-full" />
+      {/* ==== WAVE BACKGROUND ==== */}
+      <div className="absolute inset-0 -z-10">
+        <svg
+          className="absolute bottom-0 w-full h-auto opacity-80"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1440 320"
+        >
+          <path
+            fill="#1f2937"
+            d="M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,80C960,64,1056,96,1152,101.3C1248,107,1344,85,1392,74.7L1440,64L1440,0L1392,0C1344,0,
+        1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+          ></path>
+        </svg>
 
-      <div className="relative min-h-screen sm:flex sm:flex-row justify-center bg-transparent">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-700"></div>
+      </div>
+
+      {/* ==== LAYOUT ==== */}
+      <div className="relative min-h-screen sm:flex sm:flex-row justify-center">
+        {/* left text */}
         <div className="flex-col flex self-center lg:px-14 sm:max-w-4xl xl:max-w-md z-10">
           <div className="self-start hidden lg:flex flex-col text-gray-200">
             <h1 className="my-3 font-semibold text-4xl text-white">
               Welcome back
             </h1>
-            <p className="pr-3 text-sm text-gray-400">
+            <p className="pr-3 text-sm text-gray-300">
               Welcome to the Marking System. This platform provides a reliable
               environment for assessing submissions, managing grades, and
               ensuring fair evaluation.
@@ -73,6 +89,7 @@ const LoginPage = () => {
           </div>
         </div>
 
+        {/* login card */}
         <div className="flex justify-center self-center z-10">
           <div className="p-12 bg-white mx-auto rounded-3xl w-96 shadow-2xl shadow-gray-400/50">
             <div className="mb-7">
@@ -88,14 +105,14 @@ const LoginPage = () => {
               </p>
             </div>
 
+            {/* form */}
             <form onSubmit={handleLogin} className="space-y-6">
               {error && (
                 <p className="text-red-500 text-sm text-center">{error}</p>
               )}
 
-              {/* Email */}
               <input
-                className="w-full text-sm px-4 py-3 bg-gray-100 focus:bg-gray-50 border border-gray-300 rounded-lg"
+                className="w-full text-sm px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg"
                 type="email"
                 placeholder="Email"
                 value={email}
@@ -103,12 +120,11 @@ const LoginPage = () => {
                 required
               />
 
-              {/* Password */}
               <div className="relative">
                 <input
                   placeholder="Password"
                   type={showPassword ? "text" : "password"}
-                  className="text-sm px-4 py-3 rounded-lg w-full bg-gray-100 border border-gray-300 focus:outline-none"
+                  className="text-sm px-4 py-3 rounded-lg w-full bg-gray-100 border border-gray-300"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -118,28 +134,10 @@ const LoginPage = () => {
                   className="absolute inset-y-0 right-0 mr-3 flex items-center text-gray-600 cursor-pointer"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <svg
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 5c-7.633 0-11.084 6.751-11.2 6.985a1 1 0 0 0 0 .994C.916 13.249 4.367 20 12 20s11.084-6.751 11.2-6.985a1 1 0 0 0 0-.994C23.084 11.751 19.633 5 12 5zm0 13c-5.539 0-8.567-4.73-9.157-6 .59-1.27 3.618-6 9.157-6 5.539 0 8.567 4.73 9.157 6-.59 1.27-3.618 6-9.157 6z" />
-                      <path d="M12 9a3 3 0 1 0 .002 6.002A3 3 0 0 0 12 9z" />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 5c-7.633 0-11.084 6.751-11.2 6.985a1 1 0 0 0 0 .994C.916 13.249 4.367 20 12 20s11.084-6.751 11.2-6.985a1 1 0 0 0 0-.994C23.084 11.751 19.633 5 12 5zm0 13c-5.539 0-8.567-4.73-9.157-6 .59-1.27 3.618-6 9.157-6 5.539 0 8.567 4.73 9.157 6-.59 1.27-3.618 6-9.157 6z" />
-                    </svg>
-                  )}
+                  {showPassword ? "🙈" : "👁️"}
                 </div>
               </div>
 
-              {/* Sign in button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -150,6 +148,25 @@ const LoginPage = () => {
             </form>
           </div>
         </div>
+      </div>
+      {/* Bottom wave */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none -z-0">
+        <svg
+          className="relative block w-[200%] h-48"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="
+        M321.39,56.44
+        C186.81,78.67,96.43,68.13,0,0
+        V120H1200V0
+        C1034.65,80.71,896.36,85.72,703.36,66.69
+        556.97,52.59,476.24,31.79,321.39,56.44Z"
+            className="fill-gray-100"
+          />
+        </svg>
       </div>
     </div>
   );
