@@ -1,6 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import Table from "@/components/ui/Table";
 import API_URL from "@/config/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -18,19 +21,16 @@ export default function StudentsPage() {
 
   const loadedRef = useRef(false);
 
-  // Fetch groups (class names)
   const fetchGroups = async () => {
     const res = await fetch(`${API_URL}/odata/groups`);
     const data = await res.json();
     return data.value;
   };
 
-  // Fetch OData students
   const fetchStudents = async (url = `${API_URL}/odata/students`) => {
     try {
       setLoading(true);
 
-      // Load groups mapping first
       const groupsData = groups.length ? groups : await fetchGroups();
       setGroups(groupsData);
 
@@ -56,7 +56,7 @@ export default function StudentsPage() {
 
       if (data["@odata.nextLink"]) setNextLink(data["@odata.nextLink"]);
       else setNextLink(null);
-    } catch (err) {
+    } catch {
       setError("Không thể tải danh sách sinh viên.");
     } finally {
       setLoading(false);
@@ -66,11 +66,9 @@ export default function StudentsPage() {
   useEffect(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
-
     fetchStudents();
   }, []);
 
-  // Search + Filter
   useEffect(() => {
     let list = [...students];
 
@@ -98,9 +96,9 @@ export default function StudentsPage() {
       label: "Kích hoạt",
       render: (row) =>
         row.active ? (
-          <span className="text-emerald-600 font-bold">✔</span>
+          <span className="text-emerald-600 font-semibold">✔</span>
         ) : (
-          <span className="text-red-600 font-bold">✖</span>
+          <span className="text-red-600 font-semibold">✖</span>
         ),
     },
     { key: "createdAt", label: "Ngày tạo" },
@@ -108,7 +106,7 @@ export default function StudentsPage() {
       key: "actions",
       label: "Hành động",
       render: (row) => (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm">
           <button
             className="text-indigo-600 hover:underline mr-3"
             onClick={() => setViewStudent(row)}
@@ -127,69 +125,62 @@ export default function StudentsPage() {
   ];
 
   return (
-    <div className="min-h-screen p-6 lg:ml-64">
+    <div className="min-h-screen p-6  bg-gray-50">
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
-        <header className="mb-6 flex items-center justify-between">
+        <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Học sinh</h1>
-            <p className="text-gray-500 mt-1">
+            <h1 className="text-3xl font-bold tracking-tight">Học sinh</h1>
+            <p className="text-muted-foreground mt-1">
               Quản lý danh sách sinh viên tham gia kỳ thi.
             </p>
           </div>
+
           <div className="space-x-3">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm">
-              Import từ Excel
-            </button>
-            <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm">
-              + Thêm sinh viên
-            </button>
+            <Button variant="secondary">+ Thêm sinh viên</Button>
           </div>
         </header>
 
         {/* SEARCH + FILTER */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <input
-            type="text"
-            placeholder="Tìm theo tên hoặc MSSV..."
-            className="px-3 py-2 border rounded-lg text-sm w-full sm:w-1/2"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <Card className="mb-6 shadow-sm rounded-2xl">
+          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              placeholder="Tìm theo tên hoặc MSSV..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10"
+            />
 
-          <select
-            className="px-3 py-2 border rounded-lg text-sm w-full sm:w-40"
-            value={groupFilter}
-            onChange={(e) => setGroupFilter(e.target.value)}
-          >
-            <option value="all">Tất cả lớp</option>
+            <select
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+              className="border h-10 rounded-lg px-3"
+            >
+              <option value="all">Tất cả lớp</option>
+              {groups.map((g) => (
+                <option key={g.Groupid} value={g.Groupid}>
+                  {g.Groupname}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
 
-            {groups.map((g) => (
-              <option key={g.Groupid} value={g.Groupid}>
-                {g.Groupname}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {loading && (
-          <div className="text-gray-600 mb-4">Đang tải dữ liệu...</div>
-        )}
-
-        {error && <div className="text-red-600 mb-4">{error}</div>}
+        {/* TABLE */}
+        {loading && <div className="text-gray-600">Đang tải dữ liệu...</div>}
+        {error && <div className="text-red-600">{error}</div>}
 
         {!loading && (
-          <Table columns={columns} data={filtered} initialPageSize={10} />
+          <div className="shadow-sm rounded-xl overflow-hidden bg-white border">
+            <Table columns={columns} data={filtered} initialPageSize={10} />
+          </div>
         )}
 
         {nextLink && (
           <div className="mt-4 flex justify-center">
-            <button
-              onClick={() => fetchStudents(nextLink)}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm"
-            >
+            <Button variant="secondary" onClick={() => fetchStudents(nextLink)}>
               Tải thêm
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -226,21 +217,19 @@ export default function StudentsPage() {
 }
 
 /* ---------------------------
-      MODAL COMPONENT
+        MODAL
 ---------------------------- */
 function Modal({ title, children, onClose }) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-2xl shadow-xl w-[420px]">
         <h2 className="font-semibold text-lg mb-4">{title}</h2>
-        <div className="text-sm">{children}</div>
+        <div className="text-sm space-y-2">{children}</div>
+
         <div className="mt-5 text-right">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm"
-          >
+          <Button variant="secondary" onClick={onClose}>
             Đóng
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -248,31 +237,27 @@ function Modal({ title, children, onClose }) {
 }
 
 /* ---------------------------
-     EDIT FORM
+       EDIT FORM
 ---------------------------- */
 function EditStudentForm({ student, groups }) {
   const [name, setName] = useState(student.name);
   const [groupId, setGroupId] = useState(student.groupId);
 
   const submitEdit = () => {
-    alert("Đã lưu thay đổi (demo). Sau này nối API PATCH)");
+    alert("Đã lưu thay đổi (demo) – cần nối với PATCH API");
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4 text-sm">
       <div>
-        <label className="text-sm">Tên:</label>
-        <input
-          className="w-full border px-3 py-2 rounded-lg text-sm"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <label className="text-sm font-medium">Tên:</label>
+        <Input value={name} onChange={(e) => setName(e.target.value)} />
       </div>
 
       <div>
-        <label className="text-sm">Lớp:</label>
+        <label className="text-sm font-medium">Lớp:</label>
         <select
-          className="w-full border px-3 py-2 rounded-lg text-sm"
+          className="border rounded-lg px-3 py-2 w-full"
           value={groupId}
           onChange={(e) => setGroupId(e.target.value)}
         >
@@ -284,12 +269,9 @@ function EditStudentForm({ student, groups }) {
         </select>
       </div>
 
-      <button
-        onClick={submitEdit}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm"
-      >
+      <Button className="w-full" onClick={submitEdit}>
         Lưu
-      </button>
+      </Button>
     </div>
   );
 }

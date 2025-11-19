@@ -95,11 +95,8 @@ export default function Sidebar() {
             <ul className="space-y-1 px-2">
               {renderItem("/dashboard", LayoutDashboard, "Dashboard", expanded)}
               {renderItem("/students", GraduationCap, "Học sinh", expanded)}
-              {renderItem("/exams", FileText, "Kỳ thi", expanded)}
-
-              {/* Học kỳ mới thay cho Exam Rounds + Tiến độ chấm */}
               {renderItem("/semesters", BookOpen, "Học kỳ", expanded)}
-
+              {renderItem("/exams", FileText, "Kỳ thi", expanded)}
               {renderItem("/grades", FileSpreadsheet, "Kết quả", expanded)}
               {renderItem("/reports", BookOpen, "Reports", expanded)}
               {renderItem("/users", Users, "Người dùng", expanded)}
