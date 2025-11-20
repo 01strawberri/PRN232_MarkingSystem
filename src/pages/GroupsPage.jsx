@@ -142,9 +142,6 @@ export default function GroupsPage() {
         <header className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Lớp học</h1>
-            <p className="text-gray-500 mt-1">
-              Quản lý danh sách lớp (GroupID) của sinh viên.
-            </p>
           </div>
 
           <button
@@ -363,7 +360,6 @@ function GroupEditForm({
           ))}
         </select>
       </div>
-
 
       <button
         onClick={submitEdit}

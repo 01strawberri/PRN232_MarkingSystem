@@ -201,9 +201,6 @@ export default function ExamsPage() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Kỳ thi</h1>
-            <p className="text-gray-500 mt-1">
-              Danh sách kỳ thi lấy từ API odata/exams.
-            </p>
 
             {filterSemesterId && (
               <p className="text-sm mt-1 text-emerald-600">
@@ -383,7 +380,6 @@ function UploadExamForm({ exam }) {
 
       if (!res.ok) throw new Error("Upload thất bại!");
       alert("Upload thành công! Bắt đầu chấm bài...");
-      nav(`/progress?examId=${exam.id}`);
     } catch (err) {
       alert(err.message);
     } finally {
